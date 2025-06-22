@@ -1,0 +1,66 @@
+services:
+  # Frontend Service (PHP + Apache)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend:/var/www/html
+      - ./uploads:/var/www/html/uploads
+    depends_on:
+      - api
+    restart: always
+    networks:
+      - growlink-net
+
+  # API Service (Node.js + Express)
+  api:
+    build:
+      context: ./growlink-api
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./growlink-api:/usr/src/app
+      - ./uploads:/usr/src/app/uploads
+      - /usr/src/app/node_modules
+    depends_on:
+      - db
+    restart: always
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=growlink_db
+      - DB_PORT=3306
+    networks:
+      - growlink-net
+
+  # Database Service (MySQL)
+  db:
+    image: mysql:latest
+    container_name: growlink-db
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: growlink_user
+      MYSQL_PASSWORD: root
+      MYSQL_DATABASE: growlink_db
+    volumes:
+      - growlink_data:/var/lib/mysql
+      - ./frontend/init-db:/docker-entrypoint-initdb.d
+    restart: always
+    networks:
+      - growlink-net
+
+# Define the network
+networks:
+  growlink-net:
+    driver: bridge
+
+# Define the data volume
+volumes:
+  growlink_data: 
