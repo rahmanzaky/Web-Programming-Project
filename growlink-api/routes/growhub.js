@@ -3,7 +3,6 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 
-// Helper function to normalize file paths, ensuring consistency
 const normalizePath = (dbPath) => {
     if (!dbPath) return null;
     const uploadsIndex = dbPath.indexOf('uploads');
@@ -21,14 +20,11 @@ const categoryMap = {
 };
 
 const resolveCategory = (category) => {
-    // If the category is a key in our map (e.g., '1', '2'), return the mapped value.
-    // Otherwise, return the category as is (it's likely already a name like 'Project Management').
     return categoryMap[category] || category;
 };
 
 module.exports = (dbPool, checkAuth, upload) => {
 
-    // GET /templates : Mengambil semua template
     router.get('/', async (req, res, next) => {
         try {
             const sql = `
@@ -50,7 +46,6 @@ module.exports = (dbPool, checkAuth, upload) => {
         }
     });
 
-    // GET /templates/:id : Mengambil detail satu template
     router.get('/:id', async (req, res, next) => {
         try {
             const sql = `
@@ -73,7 +68,6 @@ module.exports = (dbPool, checkAuth, upload) => {
         }
     });
 
-    // POST /templates : Mengupload template baru
     router.post('/', upload.single('template_file'), async (req, res, next) => {
         const { title, category } = req.body;
         const userId = req.auth.id;
@@ -100,7 +94,6 @@ module.exports = (dbPool, checkAuth, upload) => {
         }
     });
 
-    // DELETE /templates/:id : Menghapus template
     router.delete('/:id', async (req, res, next) => {
         const templateId = req.params.id;
         const userId = req.auth.id;
@@ -115,12 +108,10 @@ module.exports = (dbPool, checkAuth, upload) => {
             const filePath = rows[0].file_path;
             const fullPath = path.join(__dirname, '..', '..', filePath);
 
-            // Delete file from filesystem
             if (fs.existsSync(fullPath)) {
                 fs.unlinkSync(fullPath);
             }
 
-            // Delete from database
             await dbPool.execute("DELETE FROM growhub WHERE id = ? AND user_id = ?", [templateId, userId]);
 
             res.status(200).json({ success: true, message: 'Template deleted successfully' });

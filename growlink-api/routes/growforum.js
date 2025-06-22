@@ -3,10 +3,8 @@ const router = express.Router();
 
 module.exports = (dbPool, checkAuth) => {
 
-    // GET /threads : Mengambil semua thread
     router.get('/', async (req, res) => {
         try {
-            // Query yang sama seperti di ThreadModel->getAll()
             const sql = `
                 SELECT gf.*, u.user_name AS author 
                 FROM growforum gf 
@@ -19,10 +17,9 @@ module.exports = (dbPool, checkAuth) => {
         }
     });
 
-    // POST /threads : Membuat thread baru (terproteksi)
     router.post('/', async (req, res) => {
         const { content } = req.body;
-        const userId = req.auth.id; // Diambil dari token
+        const userId = req.auth.id;
 
         if (!content || content.trim() === '') {
             return res.status(400).json({ message: "Content is required." });
@@ -39,13 +36,11 @@ module.exports = (dbPool, checkAuth) => {
         }
     });
     
-    // DELETE /threads/:id : Menghapus thread (terproteksi)
     router.delete('/:id', async (req, res) => {
         const threadId = req.params.id;
         const userId = req.auth.id; // ID pengguna yang mencoba menghapus
 
         try {
-            // Hapus hanya jika id thread dan user_id cocok
             const sql = "DELETE FROM growforum WHERE id = ? AND user_id = ?";
             const [result] = await dbPool.execute(sql, [threadId, userId]);
 
@@ -59,7 +54,6 @@ module.exports = (dbPool, checkAuth) => {
         }
     });
 
-    // GET /threads/:id : Mengambil detail satu thread
     router.get('/:id', async (req, res) => {
         try {
             const sql = `

@@ -1,24 +1,17 @@
 const express = require('express');
 const router = express.Router();
 
-// Helper function to normalize file paths
 const normalizePath = (dbPath) => {
     if (!dbPath) return null;
-    // This handles both old absolute paths and new relative paths
     const uploadsIndex = dbPath.indexOf('uploads');
     if (uploadsIndex === -1) {
-        return dbPath; // Return as-is if 'uploads' is not found
+        return dbPath; 
     }
-    // Extract the path from 'uploads' onwards and replace backslashes
     return dbPath.substring(uploadsIndex).replace(/\\/g, '/');
 };
 
-// Fungsi ini akan diekspor dan menerima dependensi dari server.js
 module.exports = (dbPool, checkAuth, upload) => {
 
-    // == ENDPOINTS UNTUK EVENTS ==
-
-    // GET /events : Mengambil semua event
     router.get('/', async (req, res) => {
         try {
             const sql = `
@@ -27,7 +20,6 @@ module.exports = (dbPool, checkAuth, upload) => {
                 JOIN users u ON ev.user_id = u.id 
                 ORDER BY ev.created_at DESC`;
             const [events] = await dbPool.query(sql);
-            // Normalize paths for all events before sending response
             const normalizedEvents = events.map(event => ({
                 ...event,
                 image_url: normalizePath(event.image_url),
@@ -39,7 +31,6 @@ module.exports = (dbPool, checkAuth, upload) => {
         }
     });
 
-    // GET /events/:id : Mengambil detail satu event
     router.get('/:id', async (req, res) => {
         try {
             const sql = `
@@ -50,7 +41,6 @@ module.exports = (dbPool, checkAuth, upload) => {
             const [rows] = await dbPool.execute(sql, [req.params.id]);
             if (rows.length > 0) {
                 const event = rows[0];
-                // Normalize paths for the single event
                 event.image_url = normalizePath(event.image_url);
                 event.key_summary_path = normalizePath(event.key_summary_path);
                 res.status(200).json(event);
@@ -62,21 +52,17 @@ module.exports = (dbPool, checkAuth, upload) => {
         }
     });
 
-    // POST /events : Membuat event baru (hanya untuk speaker)
     router.post('/', [upload.fields([{ name: 'image', maxCount: 1 }, { name: 'keySum', maxCount: 1 }])], async (req, res) => {
         const { title, topic, description } = req.body;
         const userId = req.auth.id; // Diambil dari token
 
         const getRelativePath = (file) => {
             if (!file) return null;
-            // file.path contains the full absolute path, e.g., /app/uploads/images/file.png
-            // We need to find the 'uploads' part and take everything after it.
             const uploadsIndex = file.path.indexOf('uploads');
-            if (uploadsIndex === -1) return file.path; // Fallback
+            if (uploadsIndex === -1) return file.path;
             return file.path.substring(uploadsIndex).replace(/\\/g, '/');
         };
 
-        // Dapatkan path file dari multer
         const imageUrl = req.files['image'] ? getRelativePath(req.files['image'][0]) : null;
         const keySumPath = req.files['keySum'] ? getRelativePath(req.files['keySum'][0]) : null;
         
@@ -93,14 +79,10 @@ module.exports = (dbPool, checkAuth, upload) => {
         }
     });
 
-    // == ENDPOINTS UNTUK INTERAKSI EVENT (REGISTRASI, KOMENTAR, REVIEW) ==
-
-    // POST /events/:id/register : Mendaftar ke sebuah event
     router.post('/:id/register', async (req, res) => {
         const eventId = req.params.id;
         const userId = req.auth.id;
         try {
-            // Logika untuk mencegah duplikasi bisa ditambahkan di sini jika perlu
             const sql = "INSERT INTO event_registrations (user_id, event_id) VALUES (?, ?)";
             await dbPool.execute(sql, [userId, eventId]);
             res.status(201).json({ message: "Successfully registered for the event." });
@@ -112,7 +94,6 @@ module.exports = (dbPool, checkAuth, upload) => {
         }
     });
 
-    // GET /events/:id/comments : Mengambil komentar untuk sebuah event
     router.get('/:id/comments', async (req, res) => {
         try {
             const sql = `
@@ -128,7 +109,6 @@ module.exports = (dbPool, checkAuth, upload) => {
         }
     });
 
-    // POST /events/:id/reviews : Menambahkan review untuk sebuah event
     router.post('/:id/reviews', async (req, res) => {
         const eventId = req.params.id;
         const userId = req.auth.id;
@@ -150,7 +130,6 @@ module.exports = (dbPool, checkAuth, upload) => {
         }
     });
 
-    // GET /events/:id/reviews : Mengambil semua review untuk sebuah event
     router.get('/:id/reviews', async (req, res) => {
         try {
             const sql = `
@@ -166,7 +145,6 @@ module.exports = (dbPool, checkAuth, upload) => {
         }
     });
 
-    // POST /events/:id/comments : Menambahkan komentar ke event
     router.post('/:id/comments', async (req, res) => {
         const eventId = req.params.id;
         const userId = req.auth.id;
@@ -183,7 +161,6 @@ module.exports = (dbPool, checkAuth, upload) => {
         }
     });
 
-    // (Optional) GET /events/:id/registrations : List all registrations for an event
     router.get('/:id/registrations', async (req, res) => {
         try {
             const sql = `

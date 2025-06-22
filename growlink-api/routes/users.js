@@ -14,12 +14,10 @@ module.exports = (dbPool, checkAuth, upload, jwt, JWT_SECRET) => {
             const eventIds = rows.map(row => row.event_id);
             res.status(200).json({ success: true, data: eventIds });
         } catch (error) {
-            // Pass the error to the centralized error handler
             next(error);
         }
     });
 
-    // New endpoint to get full details for registered events
     router.get('/me/registered-events/details', async (req, res, next) => {
         const userId = req.auth.id;
         try {
@@ -54,7 +52,6 @@ module.exports = (dbPool, checkAuth, upload, jwt, JWT_SECRET) => {
         }
     });
 
-    // GET /users/me : Get current user profile
     router.get('/me', async (req, res, next) => {
         const userId = req.auth.id;
         try {
@@ -69,7 +66,7 @@ module.exports = (dbPool, checkAuth, upload, jwt, JWT_SECRET) => {
             next(error);
         }
     });
-    // PUT /users/me : Update current user profile
+
     router.put('/me', async (req, res, next) => {
         const userId = req.auth.id;
         const { full_name, email } = req.body;
@@ -85,7 +82,6 @@ module.exports = (dbPool, checkAuth, upload, jwt, JWT_SECRET) => {
         }
     });
 
-    // PUT /users/me/become-speaker : Upgrade user to speaker
     router.put('/me/become-speaker', upload.single('cv'), async (req, res, next) => {
         const userId = req.auth.id;
         const { 'linkedin-url': linkedin_url, category: speaker_category } = req.body;
@@ -103,7 +99,6 @@ module.exports = (dbPool, checkAuth, upload, jwt, JWT_SECRET) => {
             `;
             await dbPool.execute(sql, [linkedin_url, cv_path, speaker_category, userId]);
 
-            // Fetch the updated user data to send back
             const [rows] = await dbPool.execute("SELECT id, user_name, full_name, email, role FROM users WHERE id = ?", [userId]);
             if (rows.length > 0) {
                 const user = rows[0];

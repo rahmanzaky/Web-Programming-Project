@@ -1,12 +1,8 @@
-// Di dalam file: routes/auth.js
-
 const express = require('express');
 const router = express.Router(); // Buat instance router
 
-// Ekspor sebuah FUNGSI yang menerima dependensi (dbPool, dll.)
 module.exports = (dbPool, bcrypt, jwt, JWT_SECRET) => {
 
-    // Rute untuk Registrasi
     router.post("/register", async (req, res) => {
         const { user_name, password, full_name, email } = req.body;
         if (!user_name || !password || !full_name || !email) {
@@ -25,7 +21,6 @@ module.exports = (dbPool, bcrypt, jwt, JWT_SECRET) => {
         }
     });
 
-    // Rute untuk Login
     router.post("/login", async (req, res) => {
         const { user_name, password } = req.body;
         if (!user_name || !password) {
@@ -43,7 +38,6 @@ module.exports = (dbPool, bcrypt, jwt, JWT_SECRET) => {
             if (!isMatch) {
                 return res.status(401).json({ message: "Invalid username or password." });
             }
-            // Return full user info (not password)
             const userObj = {
                 id: user.id,
                 user_name: user.user_name,
@@ -59,6 +53,5 @@ module.exports = (dbPool, bcrypt, jwt, JWT_SECRET) => {
         }
     });
 
-    // Kembalikan router yang sudah dikonfigurasi di akhir fungsi
     return router;
 };
